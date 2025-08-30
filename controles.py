@@ -10,9 +10,12 @@ running = True
 
 class Personagem:
 
-    def __init__(self, posicaoY = 500, posicaoX = 100):
+    def __init__(self, velocityX =0, velocityY = 0, grounde = True, posicaoY = 500, posicaoX = 100):
         self.posicaoY = posicaoY
         self.posicaoX = posicaoX
+        self.velocityX = velocityX
+        self.velocityY = velocityY
+        self.grounde = grounde
         self.colisao = pygame.Rect(self.posicaoX,self.posicaoY, 50, 50)
 
 jogador = Personagem()
@@ -25,11 +28,23 @@ class Controles:
         self.lower = lower
         self.jogador = jogador
 
-    def comandos(self, event.key, personagem):
-        event.key == self.right
-        event.key == self.left
-        event.key == self.jump
-        event.key == self.lower
+    def comandos(self, event.key):
+        if event.key == self.right:
+            self.jogador.posicaoX += 5
+        else:
+            self.jogador.posicaoX = 0
+        if event.key == self.left:
+            self.jogador.posicaoX -= 5
+        else:
+            self.jogador.posicaoX = 0
+        if event.key == self.jump:
+            self.jogador.velocityY -= 15
+        else:
+            self.jogador.velocityY = 0
+        if event.key == self.lower and self.jogador.grounde == True:
+            self.jogador.colisao.height = 15
+        else:
+            self.jogador.colisao.height = 0
  
 controles = Controles(pygame.K_RIGHT, pygame.K_LEFT, pygame.K_SPACE, pygame.K_DOWN)
 
@@ -38,10 +53,10 @@ while running:
     pygame.draw.rect(screen, (255, 0, 0), jogador.colisao)
 
     for event in pygame.event.get():
-    
-        controles.comandos(event.key, jogador)
 
-        if event.type == KEYDOWN: controles.comandos(event.key, jogador)
+        if event.type == KEYDOWN: controles.comandos(event.key)
+        
+        jogador.posicaoX += jogador.velocityX
 
         # Evento para fechar o jogo
         if event.type == QUIT:
