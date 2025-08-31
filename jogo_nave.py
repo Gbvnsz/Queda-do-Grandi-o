@@ -15,20 +15,24 @@ duracao_partida_ms = 120_000  # 60s
 inicio_partida_ms = pygame.time.get_ticks()
 fonte = pygame.font.SysFont(None, 30)
 
+MUSIC_END = pygame.USEREVENT + 1
+_playlist = []
+_playlist_idx = 0
+
 # Tentar carregar sprites; se falhar, usar retângulos temporários
 try:
     file_paths = [
         r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\Jogador.png",
         r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\Inimigo.png",
         r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\Tiro.jpg",
-        r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\Background.jpg"
+        r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\BackGroundMenu.jpg"
     ]
     for path in file_paths:
         print(f"Carregando: {path}")
     nave = pygame.image.load(file_paths[0]).convert_alpha()
-    nave = pygame.transform.scale(nave, (40, 40))
+    nave = pygame.transform.scale(nave, (56, 56))
     inimigo = pygame.image.load(file_paths[1]).convert_alpha()
-    inimigo = pygame.transform.scale(inimigo, (30, 30))
+    inimigo = pygame.transform.scale(inimigo, (48, 48))
     tiro_nave = pygame.image.load(file_paths[2]).convert_alpha()
     tiro_nave = pygame.transform.scale(tiro_nave, (4, 10))
     tiro_inimigo = pygame.image.load(file_paths[2]).convert_alpha()  
@@ -89,6 +93,25 @@ def desenhar_hud(tempo_restante_ms, vida, score):
 
 def novo_inimigo():
     return inimigo.get_rect(topleft=(random.randint(0, 770), -30))
+
+def musicas():
+    global _playlist, _playlist_idx
+    _playlist = [
+        r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\audios\Mercury.wav",
+        r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\audios\BossMain.wav",
+    ]
+    _playlist_idx = 0
+    try:
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+        pygame.mixer.music.set_endevent(MUSIC_END)
+        pygame.mixer.music.load(_playlist[_playlist_idx])
+        pygame.mixer.music.set_volume(0.7)   
+        pygame.mixer.music.play()            
+    except Exception as e:
+        print("Erro ao iniciar músicas:", e)
+
+musicas()
 
 while running:
 
@@ -188,6 +211,14 @@ while running:
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
+        
+        elif event.type == MUSIC_END:
+            _playlist_idx = (_playlist_idx + 1) % len(_playlist)
+        try:
+            pygame.mixer.music.load(_playlist[_playlist_idx])
+            pygame.mixer.music.play()
+        except Exception as e:
+            print("Erro ao trocar música:", e)
 
     pygame.display.update()
     clock.tick(60)

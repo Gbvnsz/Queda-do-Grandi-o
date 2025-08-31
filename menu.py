@@ -169,22 +169,60 @@ def popup_em_breve(tela, clock, mensagem="Disponível futuramente", duracao_ms=1
 def run_menu(score=None, tempo_segundos=None):
     pygame.init()
     tela = pygame.display.set_mode((LARGURA,ALTURA))
-    pygame.display.set_caption("Jogo de Nave — Menu")
+    pygame.display.set_caption("SPACE COMBAT")
     clock = pygame.time.Clock()
 
-    bg_path = r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\Background.jpg"
+    try:
+        pygame.mixer.music.load(r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\audios\The Rush.mp3")
+        pygame.mixer.music.set_volume(0.6)  
+        pygame.mixer.music.play(-1)         
+    except Exception as e:
+        print("Erro ao carregar música:", e)
+
+    bg_path = r"C:\Users\Pichau\Documents\Códigos\Faculdade\Jogo 2D\sprints\BackGroundMenu.jpg"
     background = safe_load_image(bg_path,(LARGURA,ALTURA))
+    titulo = Titulo("SPACE COMBAT")
 
-    titulo = Titulo("JOGO DE NAVE")
+    COL_ESQ_X = LARGURA//2 - 160
+    COL_DIR_X = LARGURA//2 + 160
+    BASE_Y    = 280
+    GAP_Y     = 100
+    BTN_W, BTN_H = 220, 60
 
-    opcoes = [
-        {"label": "Jogar",              "disabled": False, "badge": None},
-        {"label": "Instruções",         "disabled": False, "badge": None},
-        {"label": "Naves (Em breve)",   "disabled": True,  "badge": "EM BREVE"},
-        {"label": "Sair",               "disabled": False, "badge": None},
+    botoes = [
+        Botao("Jogar",   center=(COL_ESQ_X, BASE_Y),         largura=BTN_W, altura=BTN_H),
+        Botao("Naves",   center=(COL_ESQ_X, BASE_Y+GAP_Y),   largura=BTN_W, altura=BTN_H, disabled=True, badge="EM BREVE"),
+        Botao("Sair",    center=(COL_DIR_X, BASE_Y),         largura=BTN_W, altura=BTN_H),
+        Botao("Opções",  center=(COL_DIR_X, BASE_Y+GAP_Y),   largura=BTN_W, altura=BTN_H),
     ]
-    menu = MenuBotoes(opcoes)
 
+    # seleção inicial
+    idx_sel = 0
+    botoes[idx_sel].hover = True
+
+    def set_idx(novo):
+        nonlocal idx_sel
+        idx_sel = novo
+        for i,b in enumerate(botoes):
+            b.hover = (i==idx_sel and not b.disabled)
+
+    def mover_sel(d):
+        nonlocal idx_sel
+        n = len(botoes)
+        novo = idx_sel
+        for _ in range(n):
+            novo = (novo + d) % n
+            if not botoes[novo].disabled:
+                break
+        set_idx(novo)
+
+    def atualizar_hover_mouse(pos):
+        nonlocal idx_sel
+        for i,b in enumerate(botoes):
+            if not b.disabled and b.rect.collidepoint(pos):
+                set_idx(i)
+
+    # rodapé
     fonte_info = carregar_fonte("bahnschrift", 18)
     info = fonte_info.render("Use ↑/↓ e Enter — ou clique com o mouse", True, (220,220,220))
     info_rect = info.get_rect(center=(LARGURA//2, ALTURA-60))
@@ -193,43 +231,37 @@ def run_menu(score=None, tempo_segundos=None):
     creditos_rect = creditos.get_rect(center=(LARGURA//2, ALTURA-30))
 
     rodando, escolha = True, None
-
     while rodando:
         mouse_pos = pygame.mouse.get_pos()
         for e in pygame.event.get():
-            if e.type == QUIT:
-                pygame.quit(); exit()
+            if e.type == QUIT: pygame.quit(); exit()
             if e.type == KEYDOWN:
-                if e.key in (K_UP, K_w):
-                    menu.mover_selecao(-1)
-                elif e.key in (K_DOWN, K_s):
-                    menu.mover_selecao(+1)
+                if e.key in (K_UP, K_w): mover_sel(-1)
+                elif e.key in (K_DOWN, K_s): mover_sel(+1)
                 elif e.key in (K_RETURN, K_KP_ENTER):
-                    botao = menu.opcao_atual()
-                    if botao.disabled:
+                    btn = botoes[idx_sel]
+                    if btn.disabled:
                         popup_em_breve(tela, clock)
                     else:
-                        escolha = botao.texto
+                        escolha = btn.texto
                         rodando = False
                 elif e.key == K_ESCAPE:
-                    escolha = "Sair"
-                    rodando = False
+                    escolha = "Sair"; rodando = False
             if e.type == MOUSEMOTION:
-                menu.atualizar_hover_mouse(mouse_pos)
+                atualizar_hover_mouse(mouse_pos)
             if e.type == MOUSEBUTTONDOWN and e.button == 1:
-                for b in menu.botoes:
-                    if b.rect.collidepoint(mouse_pos):
-                        if b.disabled:
+                for i,btn in enumerate(botoes):
+                    if btn.rect.collidepoint(mouse_pos):
+                        if btn.disabled:
                             popup_em_breve(tela, clock)
                         else:
-                            escolha = b.texto
+                            escolha = btn.texto
                             rodando = False
                         break
 
-        # desenhar
         tela.blit(background, (0, 0))
         titulo.draw(tela)
-        menu.draw(tela)
+        for b in botoes: b.draw(tela)
         desenhar_stats_topo(tela, score=score, tempo_segundos=tempo_segundos)
         tela.blit(info, info_rect)
         tela.blit(creditos, creditos_rect)
@@ -238,6 +270,3 @@ def run_menu(score=None, tempo_segundos=None):
         clock.tick(60)
 
     return escolha
-
-if __name__=="__main__":
-    print("Opção escolhida:", run_menu(score=140, tempo_segundos=57))
