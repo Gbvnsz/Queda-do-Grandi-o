@@ -3,6 +3,7 @@ import subprocess
 import sys
 import re
 import pygame 
+import jogo_nave 
 from menu import run_menu
 
 def rodar_jogo_e_capturar():
